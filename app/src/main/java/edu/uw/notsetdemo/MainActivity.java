@@ -4,9 +4,11 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.app.NotificationCompat;
@@ -46,6 +48,18 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+
+        // Shared preferences (Data storage, like app settings, for example):
+        SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+                                                        // Permissions for other apps
+        SharedPreferences.Editor editor = prefs.edit();
+
+        editor.putString("message", "Hello World!");
+        editor.commit();
+
+
+        prefs.getString("message", ""); // Second value is default value if key/val isn't found
 
     }
 
@@ -97,42 +111,52 @@ public class MainActivity extends AppCompatActivity {
         Log.v(TAG, "Notify button pressed");
         notifyCount++;
 
-        // Build the notification
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_stat_name)
-                .setContentTitle("NOTICE NOTICE NOTICE")
-                .setContentText("This is notification " + notifyCount);
+        // Check prefs to see if we want pop up notifications
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-        // Must be >= HIGH to pop up at the top of the screen
-        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
-        // Must ALSO make the phone vibrate or play sound to pop up
-        mBuilder.setVibrate(new long[]{0, 500, 200, 500});
-        mBuilder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
+        boolean showPopUp = prefs.getBoolean("pref_show_notify", true);
 
-        Intent intent = new Intent(this, SecondActivity.class);
+        if (showPopUp) {
 
-        // We want to make it so back takes us to the previous activity in the app
-        // after clicking on a notification
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
 
-        // Adds the back stack for the Intent (but not the Intent itself)
-        stackBuilder.addParentStack(SecondActivity.class);
-        // Adds the Intent that starts the Activity to the top of the stack
-        stackBuilder.addNextIntent(intent);
+            // Build the notification
+            NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(this)
+                            .setSmallIcon(R.drawable.ic_stat_name)
+                            .setContentTitle("NOTICE NOTICE NOTICE")
+                            .setContentText("This is notification " + notifyCount);
 
-        PendingIntent resultPendingIntent =
-                stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-                                            // Flag updates the existing intent if it's the same
-                                            // Ex: notification of 1 email replaced with 2 if you
-                                            // receive another
+            // Must be >= HIGH to pop up at the top of the screen
+            mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+            // Must ALSO make the phone vibrate or play sound to pop up
+            mBuilder.setVibrate(new long[]{0, 500, 200, 500});
+            mBuilder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
 
-        mBuilder.setContentIntent(resultPendingIntent);
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        // ID specifies that notifications are the same so should override each other
-        mNotificationManager.notify(NOTIFY_ID, mBuilder.build());
+            Intent intent = new Intent(this, SecondActivity.class);
 
+            // We want to make it so back takes us to the previous activity in the app
+            // after clicking on a notification
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+
+            // Adds the back stack for the Intent (but not the Intent itself)
+            stackBuilder.addParentStack(SecondActivity.class);
+            // Adds the Intent that starts the Activity to the top of the stack
+            stackBuilder.addNextIntent(intent);
+
+            PendingIntent resultPendingIntent =
+                    stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+            // Flag updates the existing intent if it's the same
+            // Ex: notification of 1 email replaced with 2 if you
+            // receive another
+
+            mBuilder.setContentIntent(resultPendingIntent);
+            NotificationManager mNotificationManager =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            // ID specifies that notifications are the same so should override each other
+            mNotificationManager.notify(NOTIFY_ID, mBuilder.build());
+        } else {
+            // Don't show pop up
+        }
     }
 
     @Override
@@ -166,6 +190,9 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             case R.id.menu_item_prefs:
                 Log.v(TAG, "Settings button pressed");
+
+                Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivity(intent);
                 return true;
             case R.id.menu_item_click:
                 Log.v(TAG, "Extra button pressed");

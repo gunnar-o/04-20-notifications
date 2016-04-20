@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <CheckBoxPreference
+        android:key="pref_checkbox"
+        android:title="Text next to the preference"
+        android:defaultValue="false"
+        />
+
+    <SwitchPreference
+        android:key="pref_show_notify"
+        android:title="Show pop up notifications"
+        android:defaultValue="true"
+        />
+</PreferenceScreen>
