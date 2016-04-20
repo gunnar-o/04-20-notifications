@@ -26,6 +26,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.DIAL"/>
                 <action android:name="android.intent.action.CALL"/>
+                <action android:name="edu.uw.notsetdemo.ACTION_SMS_SENT"/>
                 <data android:scheme="tel" />
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>

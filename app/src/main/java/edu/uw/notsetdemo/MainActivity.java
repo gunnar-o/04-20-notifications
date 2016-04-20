@@ -1,10 +1,17 @@
 package edu.uw.notsetdemo;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.provider.Settings;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.SmsManager;
 import android.util.Log;
@@ -14,9 +21,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 
+import java.util.Random;
+
 public class MainActivity extends AppCompatActivity {
 
     public static final String TAG = "**Main**";
+
+    public static final String ACTION_SMS_SENT = "edu.uw.notsetdemo.ACTION_SMS_SENT";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,17 +74,64 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public static final int SMS_SEND_CODE = 2;
+
     public void sendMessage(View v) {
         Log.v(TAG, "Message button pressed");
 
         SmsManager smsManager = SmsManager.getDefault();
-        smsManager.sendTextMessage("5554", null, "This is a message!", null, null);
 
+        Intent smsIntent = new Intent(ACTION_SMS_SENT);    // Implicit - delivered to anyone who
+                                                        // can respond to the action we made
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, SMS_SEND_CODE, smsIntent, 0);
+
+        smsManager.sendTextMessage("5554", null, "This is a message!", pendingIntent, null);
     }
+
+    public static final int NOTIFY_ID = 1;
+
+    private int notifyCount = 0;
 
     public void notify(View v){
         Log.v(TAG, "Notify button pressed");
+        notifyCount++;
 
+        // Build the notification
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_stat_name)
+                .setContentTitle("NOTICE NOTICE NOTICE")
+                .setContentText("This is notification " + notifyCount);
+
+        // Must be >= HIGH to pop up at the top of the screen
+        mBuilder.setPriority(NotificationCompat.PRIORITY_HIGH);
+        // Must ALSO make the phone vibrate or play sound to pop up
+        mBuilder.setVibrate(new long[]{0, 500, 200, 500});
+        mBuilder.setSound(Settings.System.DEFAULT_NOTIFICATION_URI);
+
+        Intent intent = new Intent(this, SecondActivity.class);
+
+        // We want to make it so back takes us to the previous activity in the app
+        // after clicking on a notification
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+
+        // Adds the back stack for the Intent (but not the Intent itself)
+        stackBuilder.addParentStack(SecondActivity.class);
+        // Adds the Intent that starts the Activity to the top of the stack
+        stackBuilder.addNextIntent(intent);
+
+        PendingIntent resultPendingIntent =
+                stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+                                            // Flag updates the existing intent if it's the same
+                                            // Ex: notification of 1 email replaced with 2 if you
+                                            // receive another
+
+        mBuilder.setContentIntent(resultPendingIntent);
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        // ID specifies that notifications are the same so should override each other
+        mNotificationManager.notify(NOTIFY_ID, mBuilder.build());
 
     }
 
